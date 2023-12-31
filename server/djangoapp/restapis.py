@@ -1,7 +1,7 @@
 import requests
 import json
 # import related models here
-from .models import CarDealer
+from .models import CarDealer, DealerReview
 from requests.auth import HTTPBasicAuth
 
 # Create a `get_request` to make HTTP GET requests
@@ -57,22 +57,71 @@ def get_dealers_from_cf(url, **kwargs):
 
     return results
 
-def get_dealer_from_cf_by_id(url, dealer_id):
-    json_result = get_request(url, id=dealer_id)
-    if json_result:
-        dealer = json_result
-        dealer_obj = CarDealer(address=dealer["address"], city=dealer["city"], full_name=dealer["full_name"],
-                               id=dealer["id"], lat=dealer["lat"], long=dealer["long"],
-                               short_name=dealer["short_name"],
-                               st=dealer["st"], zip=dealer["zip"])
-    return dealer_obj
-    
+
+
 
 
 # Create a get_dealer_reviews_from_cf method to get reviews by dealer id from a cloud function
 # def get_dealer_by_id_from_cf(url, dealerId):
 # - Call get_request() with specified arguments
 # - Parse JSON results into a DealerView object list
+def get_dealer_from_cf_by_id(url, dealer_id):
+    json_result = get_request(url, id=dealer_id)
+    if json_result:
+        dealer = json_result[0]
+        dealer_obj = CarDealer(address=dealer["address"], city=dealer["city"], full_name=dealer["full_name"],
+                               id=dealer["id"], lat=dealer["lat"], long=dealer["long"],
+                               short_name=dealer["short_name"],
+                               st=dealer["st"], zip=dealer["zip"], _id=dealer["_id"], _rev=dealer["_rev"], state=dealer["state"])
+    print(dealer_obj) 
+    return dealer_obj  
+     
+
+
+def get_dealer_reviews_from_cf(url, dealer_id):
+    
+    json_result = get_request(url,id=dealer_id)
+    #print(json_result)
+    if json_result:
+        results = []
+        reviews = json_result
+        #print(reviews)
+        
+        for review in reviews:
+            
+            if review["purchase"]:
+                review_obj = DealerReview(
+                    dealership=review["dealership"],
+                    name=review["name"],
+                    purchase=review["purchase"],
+                    review=review["review"],
+                    purchase_date=str(review["purchase_date"]),
+                    car_make=review["car_make"],
+                    car_model=review["car_model"],
+                    car_year=review["car_year"],
+                    sentiment="FEELINGS", #analyze_review_sentiments(review["review"]),
+                    id=review['id']
+                )
+            else:
+                review_obj = DealerReview(
+                    dealership=review["dealership"],
+                    name=review["name"],
+                    purchase=review["purchase"],
+                    review=review["review"],
+                    purchase_date=None,
+                    car_make=None,
+                    car_model=None,
+                    car_year=None,
+                    sentiment="FEELINGS", #analyze_review_sentiments(review["review"]),
+                    id=review['id']
+                )
+            #print(review_obj)
+            
+            results.append(review_obj.review)
+            #print(results)
+    return results
+
+
 
 
 # Create an `analyze_review_sentiments` method to call Watson NLU and analyze text

@@ -1,9 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.models import User
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render, redirect
 # from .models import related models
+from .models import CarModel
 from .restapis import get_dealers_from_cf, get_dealer_reviews_from_cf,get_dealer_from_cf_by_id, analyze_review_sentiments, post_request
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
@@ -132,43 +132,37 @@ def get_dealer_details(request, dealer_id):
 
 # Create a `add_review` view to submit a review
 # def add_review(request, dealer_id):
-def add_review(request, dealer_id):
+def add_review(request, dealer_id,):
+    context = {}
+    if request.method == "GET":
+        url = "https://fritzortiz27-3000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get"
+        dealer = get_dealer_from_cf_by_id(url, dealer_id)
+        cars = CarModel.objects.filter(dealer_id=dealer_id)
+        context["cars"] = cars
+        context["dealer"] = dealer
+        return render(request, 'djangoapp/add_review.html', context)
+
     if request.method == "POST":
-        print("XXX Is the user authenticated? XXX")
-        print(User.user.is_authenticated)
-        if User.user.is_authenticated:
-            review = {
-                "id": int,
-                "name": "",
-                "dealership": int,
-                "review": "",
-                "purchase": bool,
-                "another": "",
-                "purchase_date": "",
-                "car_make": "",
-                "car_model": "",
-                "car_year": int,
-                }
-            review["id"] = 2222
-            review["name"] = "Jane Smith"
-            review["dealership"] = 22
-            review["review"] = "Excellent experience to get my first car!"
-            review["purchase"] = True
-            review["purchase_date"] = "03/20/2023"
-            review["car_make"] = "BMW"
-            review["car_model"] = "X3"
-            review["car_year"] = 2023
-
-            json_payload= {
-                "review": review,
-                }
-            response = post_request("https://fritzortiz27-5000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/post_review", json_payload, dealerId=dealer_id)
-            return HttpResponse(response)
-
+        url = "https://fritzortiz27-5000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/get_reviews"      
+        if 'purchasecheck' in request.POST:
+            was_purchased = True
         else:
-            print("XXX ERROR: user not authenticated to add_review() XXX")
-    else:
-        print("XXX NO INPUT PROVIDED XXX")
-
-
-
+            was_purchased = False
+        cars = CarModel.objects.filter(dealer_id=dealer_id)
+        for car in cars:
+            if car.id == int(request.POST['car']):
+                review_car = car  
+        review = {}
+        review["time"] = datetime.utcnow().isoformat()
+        review["name"] = request.POST['name']
+        review["dealership"] = dealer_id
+        review["review"] = request.POST['content']
+        review["purchase"] = was_purchased
+        review["purchase_date"] = request.POST['purchasedate']
+        review["car_make"] = review_car.make.name
+        review["car_model"] = review_car.name
+        review["car_year"] = review_car.year.strftime("%Y")
+        json_payload = {}
+        json_payload["review"] = review
+        response = post_request(url, json_payload)
+        return redirect("djangoapp:dealer_details", dealer_id=dealer_id)

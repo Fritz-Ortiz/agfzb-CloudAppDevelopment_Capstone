@@ -1,9 +1,10 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render, redirect
 # from .models import related models
-from .restapis import get_dealers_from_cf, get_dealer_reviews_from_cf,get_dealer_from_cf_by_id
+from .restapis import get_dealers_from_cf, get_dealer_reviews_from_cf,get_dealer_from_cf_by_id, analyze_review_sentiments, post_request
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from datetime import datetime
@@ -111,7 +112,16 @@ def get_dealer_details(request, dealer_id):
         context = {}
         
         reviews = get_dealer_reviews_from_cf("https://fritzortiz27-5000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/get_reviews", dealer_id)
-        context["reviews"] = reviews
+        analyzed_reviews = []
+        for review in reviews:
+            sentiment = analyze_review_sentiments(review)
+            analyzed_review = {
+                "Review": review,
+                "sentiment": sentiment
+            }
+            analyzed_reviews.append(analyzed_review)
+        
+        context["reviews"] = analyzed_reviews
         dealer = get_dealer_from_cf_by_id(
             "https://fritzortiz27-3000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get", dealer_id)
         context["dealer"] = dealer
@@ -122,5 +132,43 @@ def get_dealer_details(request, dealer_id):
 
 # Create a `add_review` view to submit a review
 # def add_review(request, dealer_id):
-# ...
+def add_review(request, dealer_id):
+    if request.method == "POST":
+        print("XXX Is the user authenticated? XXX")
+        print(User.user.is_authenticated)
+        if User.user.is_authenticated:
+            review = {
+                "id": int,
+                "name": "",
+                "dealership": int,
+                "review": "",
+                "purchase": bool,
+                "another": "",
+                "purchase_date": "",
+                "car_make": "",
+                "car_model": "",
+                "car_year": int,
+                }
+            review["id"] = 2222
+            review["name"] = "Jane Smith"
+            review["dealership"] = 22
+            review["review"] = "Excellent experience to get my first car!"
+            review["purchase"] = True
+            review["purchase_date"] = "03/20/2023"
+            review["car_make"] = "BMW"
+            review["car_model"] = "X3"
+            review["car_year"] = 2023
+
+            json_payload= {
+                "review": review,
+                }
+            response = post_request("https://fritzortiz27-5000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/post_review", json_payload, dealerId=dealer_id)
+            return HttpResponse(response)
+
+        else:
+            print("XXX ERROR: user not authenticated to add_review() XXX")
+    else:
+        print("XXX NO INPUT PROVIDED XXX")
+
+
 

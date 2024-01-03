@@ -107,7 +107,7 @@ def get_dealer_reviews_from_cf(url, dealer_id):
     
     json_result = get_request(url,id=dealer_id)
     #print(json_result)
-    
+    results = []
     if json_result:
         results = []
         
@@ -171,6 +171,11 @@ def analyze_review_sentiments(dealer_review):
     label = json.dumps(response, indent=2)
     label = response['sentiment']['document']['label']
     return(label)
+    
+
+
+
+
     
 
 

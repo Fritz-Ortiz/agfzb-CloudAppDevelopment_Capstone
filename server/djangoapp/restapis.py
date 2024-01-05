@@ -38,17 +38,19 @@ def get_request(url, api_key=None, **kwargs):
 # Create a `post_request` to make HTTP POST requests
 # e.g., response = requests.post(url, params=kwargs, json=payload)
 def post_request(url, json_payload, **kwargs):
+    print("XXX IN POST REQUEST XXX")
     print(json_payload)
     print("POST from {} ".format(url))
     try:
         response = requests.post(url, params=kwargs, json=json_payload)
         status_code = response.status_code
+        print(response)
         print("With status {} ".format(status_code))
         json_data = json.loads(response.text)
         print(json_data)
         return json_data
-    except:
-        print("Network exception occurred")
+    except requests.exceptions.RequestException as e:
+        print("Network exception occurred:", str(e))
 
 
 # Create a get_dealers_from_cf method to get dealers from a cloud function
@@ -104,7 +106,7 @@ def get_dealer_from_cf_by_id(url, dealer_id):
 
 
 def get_dealer_reviews_from_cf(url, dealer_id):
-    
+    print("XXX IN get_dealer_reviews_from_cf XXX")
     json_result = get_request(url,id=dealer_id)
     #print(json_result)
     results = []
@@ -127,7 +129,9 @@ def get_dealer_reviews_from_cf(url, dealer_id):
                     car_model=review["car_model"],
                     car_year=review["car_year"],
                     sentiment=analyze_review_sentiments(review["review"]),
-                    id=review['id']
+                    id=review["id"],
+                    _id = review["_id"],
+                    _rev = review["_rev"]
                 )
             else:
                 review_obj = DealerReview(
@@ -140,14 +144,18 @@ def get_dealer_reviews_from_cf(url, dealer_id):
                     car_model=None,
                     car_year=None,
                     sentiment=analyze_review_sentiments(review["review"]),
-                    id=review['id']
+                    id=review['id'],
+                    _id = review["_id"],
+                    _rev = review["_rev"]
                 )
             print("sentiment: XXXXXXXXXX BELOW THIS LINE XXXXXXXXXXXX")
             print(review_obj.sentiment)
             print(review_obj.review)
             
-            results.append(review_obj.review)
-            #print(results)
+            results.append(review_obj)
+            
+    print(results)
+    print("XXX DONE WITH get_dealer_reviews_from_cf XXX")
     return results
 
 

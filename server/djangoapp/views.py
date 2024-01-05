@@ -97,7 +97,7 @@ def registration_request(request):
 def get_dealerships(request):
     context = {}
     if request.method == "GET":
-        url = "https://fritzortiz27-3000.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get"
+        url = "https://fritzortiz27-3000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get"
         # Get dealers from the URL
         dealerships = get_dealers_from_cf(url)
         context["dealership_list"] = dealerships
@@ -110,23 +110,22 @@ def get_dealerships(request):
 
 # Create a `get_dealer_details` view to render the reviews of a dealer
 def get_dealer_details(request, dealer_id):
+    print("XXX IN GET DEALER DETAILS VIEW XXX")
     if request.method == "GET":
         context = {}
         
-        reviews = get_dealer_reviews_from_cf("https://fritzortiz27-5000.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/get_reviews", dealer_id)
+        reviews = get_dealer_reviews_from_cf("https://fritzortiz27-5000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/get_reviews", dealer_id)
         analyzed_reviews = []
-        for review in reviews:
-            sentiment = analyze_review_sentiments(review)
-            analyzed_review = {
-                "Review": review,
-                "sentiment": sentiment
-            }
-            analyzed_reviews.append(analyzed_review)
+        print("XXX REVIEWS RECIEVED XXX")
+        print(reviews)
         
-        context["reviews"] = analyzed_reviews
+        context["reviews"] = reviews
         dealer = get_dealer_from_cf_by_id(
-            "https://fritzortiz27-3000.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get", dealer_id)
+            "https://fritzortiz27-3000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get", dealer_id)
         context["dealer"] = dealer
+        print(" XXX CONTEXT XXX")
+        print(context)
+        print("XXX DONE WITH GET DEALER DETAILS VIEW XXX")
         return render(request, 'djangoapp/dealer_details.html', context)
 
 
@@ -137,7 +136,7 @@ def get_dealer_details(request, dealer_id):
 def add_review(request, dealer_id,):
     context = {}
     if request.method == "GET":
-        url = "https://fritzortiz27-3000.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get"
+        url = "https://fritzortiz27-3000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get"
         dealer = get_dealer_from_cf_by_id(url, dealer_id)
         cars = CarModel.objects.filter(dealer_id=dealer_id)
         context["cars"] = cars
@@ -145,26 +144,48 @@ def add_review(request, dealer_id,):
         return render(request, 'djangoapp/add_review.html', context)
 
     if request.method == "POST":
-        url = "https://fritzortiz27-5000.theiadockernext-0-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/get_reviews"      
-        if 'purchasecheck' in request.POST:
+        #info = request.POST.values()
+        url = "https://fritzortiz27-5000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/post_review"      
+        if 'purchase' in request.POST:
             was_purchased = True
         else:
             was_purchased = False
         cars = CarModel.objects.filter(dealer_id=dealer_id)
         for car in cars:
             if car.id == int(request.POST['car']):
-                review_car = car  
+                review_car = car 
+
+        #Creating review ID
+        
+        input_string = request.POST['content']
+        # Convert string to a list of characters
+        characters = list(input_string)
+
+        # Use set to remove duplicates and sort the characters
+        unique_characters = sorted(set(characters))
+
+        # Concatenate the ASCII values as a string
+        ascii_values_string = ''.join(str(ord(char)) for char in unique_characters)
+
+        # Convert the concatenated string to an integer
+        total = int(ascii_values_string) 
+
         review = {}
         review["time"] = datetime.utcnow().isoformat()
         review["name"] = request.POST['name']
         review["dealership"] = dealer_id
         review["review"] = request.POST['content']
         review["purchase"] = was_purchased
-        review["purchase_date"] = request.POST['purchasedate']
+        review["purchase_date"] = request.POST['purchase_date']
         review["car_make"] = review_car.make.name
         review["car_model"] = review_car.name
         review["car_year"] = review_car.year.strftime("%Y")
+        review["id"] = total
         json_payload = {}
-        json_payload["review"] = review
+        json_payload = review
+        print("XXX JSON FOR REVIEW XXX")
+        print(json_payload.values())
         response = post_request(url, json_payload)
+        print("XXX RESPONSE XXX")
+        print(response)
         return redirect("djangoapp:dealer_details", dealer_id=dealer_id)

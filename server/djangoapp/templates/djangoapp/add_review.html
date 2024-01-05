@@ -51,12 +51,12 @@
             
         </div>
     </nav>
-      <div style="min-height: 190px"></div>
+      <div style="min-height: 50px"></div>
       <div class="container">
         <div class="row">
             <div class="col-md">
                 <h4 class="mb-5"> Add a review for <strong>{{dealer.full_name}}</strong></h4>
-                <form action = "{% url 'djangoapp:add_review' dealer.id %}" method="post">
+                <form action = "{% url 'djangoapp:add_review' dealer.id %}" method="POST">
                     <H5>Your Name:</H5><br>
                     {% csrf_token %}
                     <input class="form-control" id="name" name="name" size="30" required></textarea><br>
@@ -78,11 +78,11 @@
                         <div>
                             <h5>Select Your Purchase Date:</h5><br/>
                             <div class = "input-group date" data-provide="datepicker-inline"> 
-                                <input class="date-own form-control" type="date" name="purchasedate" id="purchasedate"><br>
+                                <input class="date-own form-control" type="date" name="purchase_date" id="purchase_date"><br>
                             </div>
                         </div>
                     </div>
-                    <button class="btn btn-primary mt-5" type="submit">Add review</button>
+                    <button class="btn btn-primary mt-5" type="submit" value="Submit">Add review</button>
                 </form>
             </div>
         </div>
@@ -90,7 +90,7 @@
       <div style="min-height: 200px"></div>
       <footer class="bg-light text-center text-lg-start mt-5">
         <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.2)">
-          © 2022
+          © 2024
           <a class="text-dark" href="{% url 'djangoapp:index' %}"
             >Dealership Review</a
           >

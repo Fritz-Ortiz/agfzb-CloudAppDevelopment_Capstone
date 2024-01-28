@@ -7,7 +7,7 @@ const Cloudant = require('@cloudant/cloudant');
 async function dbCloudantConnect() {
     try {
         const cloudant = Cloudant({
-            plugins: { iamauth: { iamApiKey: 'tUlxdl3J0msBvdF8X90Btpv-wWsYPj3Y6WO_ZccZS7Dw' } }, // Replace with your IAM API key
+            plugins: { iamauth: { iamApiKey: '' } }, // Replace with your IAM API key
             url: 'https://1e3cfd9e-1e2c-4079-aeff-f9cbbd638a43-bluemix.cloudantnosqldb.appdomain.cloud', // Replace with your Cloudant URL
         });
 
